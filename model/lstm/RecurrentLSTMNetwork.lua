@@ -15,7 +15,7 @@ return function(opt, params)
    -- containers:
    params = params or {}
    layers = {}
-	l = {}
+   l = {}
 
    -- parameters:
    local p = {
@@ -42,10 +42,10 @@ return function(opt, params)
      p.cell_bn_1 = p_cell_bn[1]:fill(0.1)
      p.cell_bn_2 = p_cell_bn[2]:zero()
 
-	  table.insert(layers, l)
+     table.insert(layers, l)
    else
-		p.b = torch.zeros(1, 4 * hiddenFeatures)
-	end
+      p.b = torch.zeros(1, 4 * hiddenFeatures)
+   end
    table.insert(params, p)
 
    -- function:
