@@ -8,8 +8,6 @@ return function(opt)
       cuda = opt.useCUDA,
       episodeSamplerKind = opt.episodeSamplerKind or 'permutation',  
 
-      --dataCacheDir = '/Users/sachinr/workspace/local/',
-
       nClass = opt.nClasses,
       nSupportExamples = math.max(opt.nTrainShot, math.max(unpack(opt.nTestShot))) ,
       nEvalExamples = opt.nEval,
