@@ -16,22 +16,26 @@ return function(opt)
    opt.learningRate = 0.001
    opt.maxGradNorm = 0.25 
    --opt.momentum = 0.9
-   
+ 
    opt.batchSize = {}
    opt.batchSize[1]=5
-   opt.batchSize[5]=5
-   
+   opt.batchSize[5]=25
+   --[[opt.batchSize[10]=50
+   opt.batchSize[25]=125
+   opt.batchSize[50]=250
+   --]]
+
    opt.nEpochs = {}
-   opt.nEpochs[1]=10
-   opt.nEpochs[5]=5  
+   opt.nEpochs[1]=5
+   opt.nEpochs[5]=5
 
    opt.BN1 = false 
    opt.BN2 = false
-   opt.nEpisode = 40000 
+   opt.nEpisode = 45000 
    opt.nValidationEpisode = 100
-   opt.printPer = 100
+   opt.printPer = 50
 
-   opt.useCUDA = true 
+   opt.useCUDA = false 
    opt.useWHETLAB = false 
    opt.debug = false
 

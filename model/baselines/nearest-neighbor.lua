@@ -17,13 +17,15 @@ function nearestNeighborLib.classifySingleTest(trainX, trainY, singleTestX, opt,
    --print(w)
    --print(trainY)
 
-   -- average nearest neighbors
+   -- return label of most simlar neighbor 
    local _, idxs = torch.sort(-w, 1)
-   local lbl = 0
+   return trainY[idxs[1]]
+   
+   --[[local lbl = 0
    for i=1,K do
-      lbl = lbl + trainY[idxs[i]]
+      lbl = lbl + trainY[idxs[i]
    end
-   return torch.round(lbl/K)
+   return torch.round(lbl/K)--]]
 end
 
 function nearestNeighborLib.classify(network, trainInput, trainLabel, testInput, opt)

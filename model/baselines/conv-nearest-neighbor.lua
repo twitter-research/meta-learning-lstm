@@ -8,6 +8,7 @@ return function(opt, dataset)
 
       -- embeddings are output of pre-trained network
       network:evaluate()
+      
       network:forward(trainData)
       local trainEmbedding = network.modules[#network.modules - 1].output:clone()   
       network:forward(testData)

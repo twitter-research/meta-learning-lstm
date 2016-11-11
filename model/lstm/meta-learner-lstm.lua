@@ -58,6 +58,8 @@ function getLearner(opt)
       return nearestNeighborLib.classify(model.net, trainInput, trainTarget, testTarget, {embedFunction=embedFunction, useCUDA=opt.useCUDA}) 
    end
 
+   --local softmax = nn.SoftMax():float()
+
    local feval = function(x, inputs, targets)
       if x ~= parameters then
          parameters:copy(x)
@@ -69,6 +71,9 @@ function getLearner(opt)
       -- evaluate function for complete mini batch
       local outputs = model.net:forward(inputs)
       local f = model.criterion:forward(outputs, targets)
+
+      --print(targets)
+      --print(softmax:forward(outputs))
 
       -- estimate df/dW
       local df_do = model.criterion:backward(outputs, targets)
@@ -83,6 +88,10 @@ function getLearner(opt)
    learner.df = function(params, input, testY)
       return feval(params, input, testY)     
    end 
+ 
+   learner.reset = function()
+      netF.module:reset()
+   end
 
    return learner
 end
@@ -169,7 +178,7 @@ function getMetaLearner2(opt)
 
             -- get gradient and loss w/r/t input+label      
             local gradLearner, lossLearner = learner.df(learnerParams, x, y)                    
-      
+ 
             -- preprocess grad & loss 
             gradLearner = torch.view(gradLearner, gradLearner:size(1), 1, 1)
             local preGrad, preLoss = preprocess(gradLearner, lossLearner)
@@ -192,7 +201,6 @@ function getMetaLearner2(opt)
       -- nearest neighbor
       local pred = learner.nearestNeighbor(learnerParamsFinal, trainInput, trainTarget, testInput)
       return nil, pred
-      --return learner.f(learnerParamsFinal, testInput, testTarget)
    end
 
 
@@ -205,6 +213,8 @@ function getMetaLearner2(opt)
 
       local trainSize = trainInput:size(1)      
       local idx = 1
+
+      learner.reset()
 
       -- training set loop
       for s=1,steps do
@@ -223,7 +233,8 @@ function getMetaLearner2(opt)
 
             -- get gradient and loss w/r/t input+label      
             local gradLearner, lossLearner = learner.df(learnerParams, x, y)                    
-      
+            --print(idx .. ": " .. lossLearner)
+
             -- preprocess grad & loss 
             gradLearner = torch.view(gradLearner, gradLearner:size(1), 1, 1)
             local preGrad, preLoss = preprocess(gradLearner, lossLearner)

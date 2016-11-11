@@ -36,7 +36,7 @@ return function(opt, dataset)
    elseif opt.version == 2 then 
       metaLearnerF = getMetaLearner2
    end
-   local metaLearner = metaLearnerF({learnerParams=learner.params, nParams=learner.nParams, debug=opt.debug, homePath=opt.homePath, steps=opt.steps, BN1=opt.BN1, BN2=opt.BN2})  
+   local metaLearner = metaLearnerF({learnerParams=learner.params, nParams=learner.nParams, debug=opt.debug, homePath=opt.homePath, BN1=opt.BN1, BN2=opt.BN2})  
 
    -- type of classification (use network or nearest-neighbor?)
    local classify 
@@ -47,9 +47,13 @@ return function(opt, dataset)
    end
    
    -- load params from file?
-   if opt.metaLearnerParamsFile then
-      print('loading from: ' .. opt.metaLearnerParamsFile)
-      metaLearner.params = torch.load(opt.metaLearnerParamsFile)
+   if opt.paramsFile then
+      print("loading params from: " .. opt.paramsFile)
+      local loadedParams = torch.load(opt.paramsFile)
+      util.checkAndExpandParams(metaLearner.params[2].cI, loadedParams[2].cI)
+      metaLearner.params = loadedParams
+      
+      --metaLearner.params = util.checkAndExpandParams(metaLearner.params, torch.load(opt.paramsFile))
    end
 
    -- cast params to float or cuda 
@@ -72,7 +76,7 @@ return function(opt, dataset)
 
    -- init optimizer
    local optimizer, optimState = autograd.optim[opt.optimMethod](metaLearner.dfWithGradNorm, tablex.deepcopy(opt), metaLearner.params) 
-
+  
    for d=1,nEpisode do  
       -- create training epsiode 
       local trainSet, testSet = metaTrainSet.createEpisode({nTrain=opt.nShot, nClasses=opt.nClasses})   
@@ -81,7 +85,7 @@ return function(opt, dataset)
       local trainData = trainSet:get() 
       local trainInput, trainTarget = util.extractK(trainData.input, trainData.target, opt.nTrainShot, opt.nClasses.train)
       local testData = testSet:get()
-   
+  
       local gParams, loss, prediction = optimizer(learner, trainInput, trainTarget, testData.input, testData.target, opt.nEpochs[opt.nTrainShot], opt.batchSize[opt.nTrainShot])
       cost = cost + loss      
       
@@ -94,6 +98,8 @@ return function(opt, dataset)
          local elapsed = timer:time().real
          print(string.format("Dataset: %d, Train Loss: %.3f, LR: %.3f, Time: %.4f s", d, cost/(printPer), util.getCurrentLR(optimState[1]), elapsed))
          print(trainConf)
+         --trainConf:updateValids()
+         --print('global accuracy: ' .. trainConf.totalValid * 100)
          trainConf:zero()
 
          -- validation loop   
@@ -106,7 +112,7 @@ return function(opt, dataset)
             for _,k in pairs(opt.nTestShot) do
                local trainInput, trainTarget = util.extractK(trainData.input, trainData.target, k, opt.nClasses.val)
    
-               local _, prediction = classify(metaLearner.params, learner, trainInput, trainTarget, testData.input, testData.target, opt.nEpochs[k], opt.batchSize[k])     
+               local _, prediction = classify(metaLearner.params, learner, trainInput, trainTarget, testData.input, testData.target, opt.nEpochs[k] or opt.nEpochs[opt.nTrainShot], opt.batchSize[k] or opt.batchSize[opt.nTrainShot])     
       
                for i=1,prediction:size(1) do
                   valConf[k]:add(prediction[i], testData.target[i])  
@@ -116,8 +122,10 @@ return function(opt, dataset)
          end   
       
          for _,k in pairs(opt.nTestShot) do 
-            print('Validation accuracy (' .. k .. '-shot)')
+            print('Validation Accuracy (' .. opt.nValidationEpisode .. ' episodes, ' .. k .. '-shot)')
             print(valConf[k])
+            --valConf[k]:updateValids()
+            --print('global accuracy: ' .. valConf[k].totalValid * 100)
             valConf[k]:zero()
          end
    
@@ -131,34 +139,59 @@ return function(opt, dataset)
       end   
    end
 
+   local ret = {} 
    -- test loop
-   for d=1,opt.nTest do 
-      local trainSet, testSet = metaTestSet.createEpisode({nTrain=opt.nShot, nClasses=opt.nClasses})   
-
-      local trainData = trainSet:get() 
-      local testData = testSet:get()
-      local loss, prediction 
-
-      -- k-shot loop
-      for _, k in pairs(opt.nTestShot) do 
-         local trainInput, trainTarget = util.extractK(trainData.input, trainData.target, k, opt.nClasses.test)
-
-         local _, prediction = classify(metaLearner.params, learner, trainInput, trainTarget, testData.input, testData.target, opt.nEpochs[k], opt.batchSize[k])  
-         
-         for i=1,prediction:size(1) do
-            testConf[k]:add(prediction[i], testData.target[i]) 
-         end
-
+   _.each(opt.nTest, function(i, n)
+      local acc = {}
+      for _, k in pairs(opt.nTestShot) do
+         acc[k] = torch.zeros(n)
       end
-         
-   end
+     
+      for d=1,n do 
+         local trainSet, testSet = metaTestSet.createEpisode({nTrain=opt.nShot, nClasses=opt.nClasses})   
 
-   for _,k in pairs(opt.nTestShot) do 
-      print('Test Accuracy (' .. k .. '-shot)')
-      print(testConf[k])
-   end
+         local trainData = trainSet:get() 
+         local testData = testSet:get()
+         local loss, prediction 
 
-   return _.values(_.map(testConf, function(i,cM) 
-            return i .. '-shot: ' .. cM.totalValid*100
-          end))
+         -- k-shot loop
+         for _, k in pairs(opt.nTestShot) do 
+            --print('processing: ' .. d)
+            local trainInput, trainTarget = util.extractK(trainData.input, trainData.target, k, opt.nClasses.test)
+           
+            local loss, prediction = classify(metaLearner.params, learner, trainInput, trainTarget, testData.input, testData.target, opt.nEpochs[k] or opt.nEpochs[opt.nTrainShot], opt.batchSize[k] or opt.batchSize[opt.nTrainShot])  
+            
+            for i=1,prediction:size(1) do
+               testConf[k]:add(prediction[i], testData.target[i]) 
+            end
+
+            testConf[k]:updateValids() 
+
+            --print('loss: ' .. loss)
+            --print('acc: ' .. testConf[k].totalValid*100)
+
+            acc[k][d] = testConf[k].totalValid*100
+            testConf[k]:zero()
+         end
+            
+      end
+
+      for _,k in pairs(opt.nTestShot) do 
+         print('Test Accuracy (' .. n .. ' episodes, ' .. k .. '-shot)')
+         print(acc[k]:mean())
+         --print(testConf[k])
+      end
+
+      --[[ret[n] = _.values(_.map(testConf, function(i,cM) 
+               return i .. '-shot: ' .. cM.totalValid*100
+             end))
+      _.map(testConf, function(i,cM) cM:zero() end)--]] 
+      ret[n] = _.values(_.map(acc, function(i, val) 
+            local low = val:mean() - 1.96*(val:std()/math.sqrt(val:size(1)))
+            local high = val:mean() + 1.96*(val:std()/math.sqrt(val:size(1)))       
+            return i .. '-shot: ' .. val:mean() .. '; ' .. val:std() .. '; [' .. low .. ',' .. high .. ']' 
+      end))
+   end)
+
+   return ret
 end

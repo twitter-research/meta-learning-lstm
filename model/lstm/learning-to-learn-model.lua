@@ -58,6 +58,8 @@ function getMetaLearner1(opt)
       local trainSize = trainInput:size(1)      
       local idx = 1
 
+      learner.reset()
+
       -- training set loop
       for s=1,steps do
 

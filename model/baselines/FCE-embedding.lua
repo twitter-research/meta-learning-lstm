@@ -156,6 +156,17 @@ return function(opt)
       end
    end
    
-   
+   model.save = function()
+      local models = {modelF=embedNet1:clearState(), modelG=embedNet2:clearState()}
+      torch.save('matching-net-models.th', models)
+   end
+
+   model.load = function(networkFile, opt)
+      local data = torch.load(networkFile)
+      modelF, _ = autograd.functionalize(util.localize(data.modelF, opt))
+      modelG, _ = autograd.functionalize(util.localize(data.modelG, opt)) 
+   end
+
+
    return model
 end

@@ -50,6 +50,17 @@ def readFile(fileName):
             train_vals.append(float(val)) 
             trainFound = True 
          
+         elif len(arr) >=4 and arr[0] == 'Training' and arr[len(arr) - 2] == 'Accuracy:':
+            iteration = int(arr[2].replace(',', ''))
+            iterFound = True
+            
+            val = arr[len(arr) - 1]
+            if val.find("%") > 0:
+               val = val.replace('%', '') 
+                   
+            train_vals.append(float(val)) 
+            trainFound = True
+
    return iters, train_vals, oneShot_vals, fiveShot_vals 
 
 if __name__ == '__main__':
@@ -60,5 +71,5 @@ if __name__ == '__main__':
       plt.plot(iters, oneShot_vals, label=sys.argv[i] + ":one-shot")
       plt.plot(iters, fiveShot_vals, label=sys.argv[i] + ":five-shot")
          
-   plt.legend(loc='lower right')
+   plt.legend(loc='lower right', prop={'size':6})
    plt.show()

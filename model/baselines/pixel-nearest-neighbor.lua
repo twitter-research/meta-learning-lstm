@@ -1,5 +1,5 @@
 
-return function(opt, model, dataset, confusion)
+return function(opt, dataset)
    opt.pixelNearestNeighbor = true
    opt.embedFunction = function(lopt)
       local trainData = lopt.trainData
@@ -14,5 +14,5 @@ return function(opt, model, dataset, confusion)
       return trainEmbedding, testEmbedding
    end
    
-   return require(opt.homePath .. 'model.baselines.nearest-neighbor')(opt, model, dataset, confusion)
+   return require(opt.homePath .. 'model.baselines.pre-train')(opt, dataset)
 end

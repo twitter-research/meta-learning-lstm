@@ -2,20 +2,23 @@ local _ = require 'moses'
 
 return function(opt) 
    require(opt.homePath .. 'dataset.dataset')
-   torch.setnumthreads(2)
 
    local dataOpt = {
       cuda = opt.useCUDA,
       episodeSamplerKind = opt.episodeSamplerKind or 'permutation',  
 
+      --dataCacheDir = '/Users/sachinr/workspace/local/',
+
       nClass = opt.nClasses,
-      nSupportExamples = math.max(opt.nTrainShot, math.max(unpack(opt.nTestShot))) ,
+      nSupportExamples = math.max(opt.nTrainShot, math.max(unpack(opt.nTestShot))),
       nEvalExamples = opt.nEval,
 
       imageDepth = opt.nDepth,
       imageHeight = opt.nIn,
       imageWidth = opt.nIn,
       resizeType = 'scale',
+      
+      normalizeData = opt.normalizeData
    }
    local data = require('cortex-core.projects.research.metalearn.data.' .. opt.dataName)(dataOpt)
    

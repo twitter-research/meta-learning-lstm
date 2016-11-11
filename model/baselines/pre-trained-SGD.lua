@@ -1,11 +1,11 @@
 local util = require 'cortex-core.projects.research.oneShotLSTM.util.util'
 local _ = require 'moses'
 
-function eval(network, criterion, evalSet, conf, initParams, opt, optimOpt, updates)
-   local params, gParams = network:getParameters()
-   
+function eval(network, criterion, evalSet, nEpisodes, conf, initParams, opt, optimOpt, updates)
+   local params, gParams = network:getParameters() 
+ 
    -- evaluate validation set
-   for v=1,1 do
+   for v=1,nEpisodes do
       local trainSet, testSet = evalSet.createEpisode({})
    
       -- get all train examples
@@ -21,8 +21,7 @@ function eval(network, criterion, evalSet, conf, initParams, opt, optimOpt, upda
 
          -- train 
          local input, target = util.extractK(trainData.input, trainData.target, k, opt.nClasses.test)
-         for i=1,input:size(1)*optimOpt.nUpdate do
-            local idx = math.fmod(i-1, input:size(1)) + 1
+         for i=1,optimOpt.nUpdate do
             
             -- evaluation network on current batch
             local function feval(x)
@@ -36,11 +35,10 @@ function eval(network, criterion, evalSet, conf, initParams, opt, optimOpt, upda
                end
 
                -- evaluation network and loss
-               local inputSel = input:index(1,torch.LongTensor{idx}) 
-               local prediction = network:forward(inputSel)
-               local loss = criterion:forward(prediction, target[idx])
-               local dloss = criterion:backward(prediction, target[idx])
-               network:backward(inputSel, dloss)
+               local prediction = network:forward(input)
+               local loss = criterion:forward(prediction, target)
+               local dloss = criterion:backward(prediction, target)
+               network:backward(input, dloss)
 
                return loss, gParams
             end
@@ -64,7 +62,7 @@ function eval(network, criterion, evalSet, conf, initParams, opt, optimOpt, upda
           end)       
 end
 
-function bestSGD(model, nClasses, evalSet, conf, opt, learningRates, learningRateDecays, nUpdates)
+function bestSGD(model, nClasses, evalSet, nEpisodes, conf, opt, learningRates, learningRateDecays, nUpdates)
    local network = model.net
    network:remove(network:size())
    network:add(nn.Linear(model.outSize, nClasses))
@@ -79,22 +77,20 @@ function bestSGD(model, nClasses, evalSet, conf, opt, learningRates, learningRat
    -- loop over variables to grid search over
    _.each(learningRates, function(i, lr)
       _.each(learningRateDecays, function(j, lrDecay) 
-         _.each(nUpdates, function(u, update)         
             
-            -- update best performance on each task
-            local optimOpt = {learningRate=lr, learningRateDecay=lrDecay, nUpdate=update}
-            print("evaluating params: ")
-            print(optimOpt)
-            local kShotAccs = eval(network, model.criterion, evalSet, conf, preTrainedParams, opt, optimOpt)
-            
-            _.each(conf, function(k, cM)  
-               print(k .. '-shot: ')
-               print(cM)
-               if kShotAccs[k] > bestPerf[k].accuracy then
-                  bestPerf[k].params = optimOpt
-                  bestPerf[k].accuracy = kShotAccs[k]
-               end
-            end)
+         -- update best performance on each task
+         local optimOpt = {learningRate=lr, learningRateDecay=lrDecay, nUpdate=nUpdates}
+         print("evaluating params: ")
+         print(optimOpt)
+         local kShotAccs = eval(network, model.criterion, evalSet, nEpisodes, conf, preTrainedParams, opt, optimOpt)
+         
+         _.each(conf, function(k, cM)  
+            print(k .. '-shot: ')
+            print(cM)
+            if kShotAccs[k] > bestPerf[k].accuracy then
+               bestPerf[k].params = optimOpt
+               bestPerf[k].accuracy = kShotAccs[k]
+            end
          end)
       end)
    end)
@@ -106,7 +102,7 @@ function bestSGD(model, nClasses, evalSet, conf, opt, learningRates, learningRat
    return bestPerf
 end
 
-return function(opt, model, dataset, confusion)
+return function(opt, dataset)
    opt.bestSGD = bestSGD 
-   return require(opt.homePath .. 'model.baselines.nearest-neighbor')(opt, model, dataset, confusion) 
+   return require(opt.homePath .. 'model.baselines.pre-train')(opt, dataset) 
 end

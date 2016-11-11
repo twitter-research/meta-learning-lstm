@@ -7,6 +7,15 @@ return function(opt)
    opt.dataName = 'omniglot'
    opt.homePath = 'cortex-core.projects.research.oneShotLSTM.'
    opt.dataLoader = 'dataset.data-loader2'
-   
+  
+   --[[
+   opt.dataLoader = 'dataset.data-loader'
+   opt.datasetHdfsRoot = '/user/cortex/cxbenchmarks/images/omniglot/'
+   opt.dataFolder = 'omniglot'
+   opt.trainFile = 'train.th'
+   opt.validationFile = 'validation.th'
+   opt.testFile = 'test.th'
+   --]]
+
    return opt
 end
