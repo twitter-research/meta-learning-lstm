@@ -1,6 +1,6 @@
 local t = require 'torch'
 local nn = require 'nn'
-local util = require 'cortex-core.projects.research.oneShotLSTM.util.util'
+local util = require 'util.util'
 
 function convLayer(net, nInput, nOutput, k, useDropout) 
    if useDropout == nil then useDropout = true end

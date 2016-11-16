@@ -1,7 +1,7 @@
 local t = require 'torch'
 local autograd = require 'autograd'
 local funcNN = autograd.functionalize('nn') 
-local util = require 'cortex-core.projects.research.oneShotLSTM.util.util'
+local util = require 'util.util'
 
 local P = 10
 local expP = torch.exp(P)

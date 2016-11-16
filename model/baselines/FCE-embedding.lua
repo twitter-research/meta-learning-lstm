@@ -1,36 +1,36 @@
 local t = require 'torch'
 local autograd = require 'autograd'
-local util = require 'cortex-core.projects.research.oneShotLSTM.util.util'
+local util = require 'util.util'
 
 return function(opt)
    local model = {}
    local maxGradNorm = opt.maxGradNorm or 0.25
 
    -- load and functionalize embedding nets
-   local model1 = require(opt.homePath .. opt.model)({
+   local model1 = require(opt.model)({
       nClasses=opt.nClasses.train, useCUDA=opt.useCUDA, classify=false, nIn=opt.nIn, nDepth=opt.nDepth
    })  
    local embedNet1 = model1.net
-   local model2 = require(opt.homePath .. opt.model)({
+   local model2 = require(opt.model)({
       nClasses=opt.nClasses.train, useCUDA=opt.useCUDA, classify=false, nIn=opt.nIn, nDepth=opt.nDepth
    })  
    local embedNet2 = model2.net
    local modelF, paramsF = autograd.functionalize(embedNet1)
    local modelG, paramsG = autograd.functionalize(embedNet2)   
          
-   local attLSTM, paramsAttLSTM, layers = require(opt.homePath .. '.model.lstm.RecurrentLSTMNetwork')({
+   local attLSTM, paramsAttLSTM, layers = require('model.lstm.RecurrentLSTMNetwork')({
       inputFeatures = model1.outSize + model2.outSize,
       hiddenFeatures = model1.outSize,
       outputType = 'all'
    })
 
-   local biLSTMForward, paramsBiLSTMForward, layers = require(opt.homePath .. '.model.lstm.RecurrentLSTMNetwork')({
+   local biLSTMForward, paramsBiLSTMForward, layers = require('model.lstm.RecurrentLSTMNetwork')({
       inputFeatures = model2.outSize, 
       hiddenFeatures = model2.outSize,
       outputType = 'all'
    }) 
 
-   local biLSTMBackward, paramsBiLSTMBackward, layers = require(opt.homePath .. '.model.lstm.RecurrentLSTMNetwork')({
+   local biLSTMBackward, paramsBiLSTMBackward, layers = require('model.lstm.RecurrentLSTMNetwork')({
       inputFeatures = model2.outSize, 
       hiddenFeatures = model2.outSize,
       outputType = 'all'

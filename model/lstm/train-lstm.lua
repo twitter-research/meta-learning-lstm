@@ -1,12 +1,12 @@
 local t = require 'torch'
 local autograd = require 'autograd'
 local nn = require 'nn'
-local util = require 'cortex-core.projects.research.oneShotLSTM.util.util'
+local util = require 'util.util'
 local _ = require 'moses'
 
 --require 'cortex-core.projects.research.oneShotLSTM.model.lstm.lstm-helper'
-require 'cortex-core.projects.research.oneShotLSTM.model.lstm.meta-learner-lstm'
-require 'cortex-core.projects.research.oneShotLSTM.model.lstm.learning-to-learn-model'
+require 'model.lstm.meta-learner-lstm'
+require 'model.lstm.learning-to-learn-model'
 
 return function(opt, dataset)
    -- data
@@ -112,7 +112,7 @@ return function(opt, dataset)
             for _,k in pairs(opt.nTestShot) do
                local trainInput, trainTarget = util.extractK(trainData.input, trainData.target, k, opt.nClasses.val)
    
-               local _, prediction = classify(metaLearner.params, learner, trainInput, trainTarget, testData.input, testData.target, opt.nEpochs[k] or opt.nEpochs[opt.nTrainShot], opt.batchSize[k] or opt.batchSize[opt.nTrainShot])     
+               local _, prediction = classify(metaLearner.params, learner, trainInput, trainTarget, testData.input, testData.target, opt.nEpochs[k] or opt.nEpochs[opt.nTrainShot], opt.batchSize[k] or opt.batchSize[opt.nTrainShot], true)     
       
                for i=1,prediction:size(1) do
                   valConf[k]:add(prediction[i], testData.target[i])  

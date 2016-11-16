@@ -1,7 +1,7 @@
-local util = require 'cortex-core.projects.research.oneShotLSTM.util.util'
+local util = require 'util.util'
 local _ = require 'moses'
 
-function eval(network, criterion, evalSet, nEpisodes, conf, initParams, opt, optimOpt, updates)
+function eval(network, criterion, evalSet, nEpisodes, conf, initParams, opt, optimOpt)
    local params, gParams = network:getParameters() 
  
    -- evaluate validation set
@@ -22,10 +22,8 @@ function eval(network, criterion, evalSet, nEpisodes, conf, initParams, opt, opt
          -- train 
          local input, target = util.extractK(trainData.input, trainData.target, k, opt.nClasses.test)
          for i=1,optimOpt.nUpdate do
-            
             -- evaluation network on current batch
             local function feval(x)
-
                -- zero-out gradients
                gParams:zero()
 
@@ -63,13 +61,13 @@ function eval(network, criterion, evalSet, nEpisodes, conf, initParams, opt, opt
 end
 
 function bestSGD(model, nClasses, evalSet, nEpisodes, conf, opt, learningRates, learningRateDecays, nUpdates)
-   local network = model.net
-   network:remove(network:size())
-   network:add(nn.Linear(model.outSize, nClasses))
+   model.net:remove(model.net:size())
+   model.net:add(nn.Linear(model.outSize, nClasses))
    model.net = util.localize(model.net, opt)
-
-   local preTrainedParams, gParams = network:getParameters()
-   preTrainedParams = preTrainedParams:clone()
+  
+   local network = model.net
+   local tempParams, gParams = network:getParameters()
+   local preTrainedParams = tempParams:clone()
 
    local bestPerf = {}
    _.map(conf, function(k,cM) bestPerf[k] = {params=0, accuracy=0} end)
@@ -77,20 +75,22 @@ function bestSGD(model, nClasses, evalSet, nEpisodes, conf, opt, learningRates, 
    -- loop over variables to grid search over
    _.each(learningRates, function(i, lr)
       _.each(learningRateDecays, function(j, lrDecay) 
+         _.each(nUpdates, function(k, update)    
             
-         -- update best performance on each task
-         local optimOpt = {learningRate=lr, learningRateDecay=lrDecay, nUpdate=nUpdates}
-         print("evaluating params: ")
-         print(optimOpt)
-         local kShotAccs = eval(network, model.criterion, evalSet, nEpisodes, conf, preTrainedParams, opt, optimOpt)
-         
-         _.each(conf, function(k, cM)  
-            print(k .. '-shot: ')
-            print(cM)
-            if kShotAccs[k] > bestPerf[k].accuracy then
-               bestPerf[k].params = optimOpt
-               bestPerf[k].accuracy = kShotAccs[k]
-            end
+            -- update best performance on each task
+            local optimOpt = {learningRate=lr, learningRateDecay=lrDecay, nUpdate=update}
+            print("evaluating params: ")
+            print(optimOpt)
+            local kShotAccs = eval(network, model.criterion, evalSet, nEpisodes, conf, preTrainedParams, opt, optimOpt)
+            
+            _.each(conf, function(k, cM)  
+               print(k .. '-shot: ')
+               print(cM)
+               if kShotAccs[k] > bestPerf[k].accuracy then
+                  bestPerf[k].params = optimOpt
+                  bestPerf[k].accuracy = kShotAccs[k]
+               end
+            end)
          end)
       end)
    end)
@@ -104,5 +104,5 @@ end
 
 return function(opt, dataset)
    opt.bestSGD = bestSGD 
-   return require(opt.homePath .. 'model.baselines.pre-train')(opt, dataset) 
+   return require('model.baselines.pre-train')(opt, dataset) 
 end

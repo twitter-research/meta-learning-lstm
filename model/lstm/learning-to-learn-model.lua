@@ -1,22 +1,22 @@
-require 'cortex-core.projects.research.oneShotLSTM.model.lstm.lstm-helper'
+require 'model.lstm.lstm-helper'
 
 local t = require 'torch'
 local autograd = require 'autograd'
-local util = require 'cortex-core.projects.research.oneShotLSTM.util.util'
+local util = require 'util.util'
 
 function getMetaLearner1(opt)
    local metaLearner = {}
    local nHidden = opt.nHidden or 20
    local maxGradNorm = opt.maxGradNorm or 0.25 
 
-   local lstm1, params, layers = require(opt.homePath .. '.model.lstm.RecurrentLSTMNetwork')({  
+   local lstm1, params, layers = require('model.lstm.RecurrentLSTMNetwork')({  
       inputFeatures = 2,   -- preGrad(2)
       hiddenFeatures = nHidden,
       outputType = 'all',
       batchNormalization = opt.BN1, 
       maxBatchNormalizationLayers = opt.steps 
    })
-   local lstm2, params2, layers2 = require(opt.homePath .. '.model.lstm.RecurrentLSTMNetwork')({ 
+   local lstm2, params2, layers2 = require('model.lstm.RecurrentLSTMNetwork')({ 
       inputFeatures = nHidden,
       hiddenFeatures = nHidden,
       outputType = 'last',

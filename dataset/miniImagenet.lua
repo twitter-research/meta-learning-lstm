@@ -2,9 +2,8 @@ local _ = require 'moses'
 local c = require 'trepl.colorize'
 local Dataset = require 'dataset.Dataset'
 
-local util = require 'cortex-core.projects.research.metalearn.data.util'
-
-local remoteDataDir = '/user/cortex/metalearn-sachinr/imagenet-local'
+local util = require 'dataset.util'
+--local remoteDataDir = '/user/cortex/metalearn-sachinr/imagenet-local'
 
 local function loadSplit(splitFile)
    --[[
@@ -35,13 +34,12 @@ end
 local function processor(ind, opt, input)
    if not threadInitialized then
       _ = require 'moses'
-      local imagecore = require 'imagecore'
       local nn = require 'nn'
-      local prenn = require 'prenn'
 		local sys = require 'sys' 
+      local image = require 'image'
 
       local pre = nn.Sequential()
-      if opt.pre then
+      --[[[if opt.pre then
          assert(not opt.resizeType, 'resizeType is only used if there is no pre')
          pre:add(opt.pre(opt))
       else
@@ -50,6 +48,7 @@ local function processor(ind, opt, input)
                              opt.imageWidth,
                              opt.resizeType))
       end
+      --]]
 
       pre:add(nn.Reshape(1, opt.imageDepth, opt.imageHeight, opt.imageWidth))
       pre:add(nn.MulConstant(1.0 / 255, true))
@@ -62,14 +61,17 @@ local function processor(ind, opt, input)
 
       if opt.cuda then
          require 'cunn'
-         require 'cudnn'
+         --require 'cudnn'
+         pre:insert(nn.Copy('torch.ByteTensor', 'torch.CudaTensor'), 1)
          pre:cuda()
       else
+         pre:insert(nn.Copy('torch.ByteTensor', 'torch.FloatTensor'), 1)
          pre:float()
       end
 
-		function loadImage(path)
-         return imagecore.loadFile(path)
+      function loadImage(path)
+         local img = image.load(path, 3, 'byte')
+         return image.scale(img, opt.imageWidth, opt.imageHeight) 
       end
 	
       function preprocessImages(images)
@@ -149,7 +151,7 @@ local function getData(opt)
       return not paths.filep(paths.concat(splitDir, baseFile))
    end)
 
-   -- fetch if necessary
+   --[[-- fetch if necessary
    if #filesToFetch > 0 then
       print(c.green '==>' .. ' fetching miniImagenet files')
       _.each(filesToFetch, function(i, baseFile)
@@ -166,6 +168,7 @@ local function getData(opt)
    else
       print(c.green '==>' .. ' found miniImagenet files')
    end
+   --]]
 
 	-- unzip images
 	if not paths.dirp(paths.concat(splitDir, imagesDir)) then 

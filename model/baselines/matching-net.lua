@@ -1,7 +1,7 @@
 local t = require 'torch'
 local nn = require 'nn'
 local autograd = require 'autograd'
-local util = require 'cortex-core.projects.research.oneShotLSTM.util.util'
+local util = require 'util.util'
 local _ = require 'moses'
 
 function getMatchingNet(opt)
@@ -11,7 +11,7 @@ function getMatchingNet(opt)
    local cosineSim = autograd.functionalize(nn.CosineDistance())  
    
    -- load embedding model (simple or FCE)
-   local embedModel = require(opt.homePath .. opt.embedModel)(opt)
+   local embedModel = require(opt.embedModel)(opt)
    local cast = "float"
    if opt.useCUDA then
       cast = "cuda"

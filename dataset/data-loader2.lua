@@ -1,13 +1,13 @@
 local _ = require 'moses'
 
 return function(opt) 
-   require(opt.homePath .. 'dataset.dataset')
+   require('dataset.dataset')
 
    local dataOpt = {
       cuda = opt.useCUDA,
       episodeSamplerKind = opt.episodeSamplerKind or 'permutation',  
 
-      --dataCacheDir = '/Users/sachinr/workspace/local/',
+      dataCacheDir = opt.rawDataDir,
 
       nClass = opt.nClasses,
       nSupportExamples = math.max(opt.nTrainShot, math.max(unpack(opt.nTestShot))),
@@ -20,7 +20,8 @@ return function(opt)
       
       normalizeData = opt.normalizeData
    }
-   local data = require('cortex-core.projects.research.metalearn.data.' .. opt.dataName)(dataOpt)
+   
+   local data = require(opt.dataName)(dataOpt)
    
    local function prepareDataset(split, sample, field, batchSize)
          

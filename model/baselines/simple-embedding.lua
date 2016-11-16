@@ -1,16 +1,16 @@
 local t = require 'torch'
 local autograd = require 'autograd'
-local util = require 'cortex-core.projects.research.oneShotLSTM.util.util'
+local util = require 'util.util'
 
 return function(opt)
    local model = {}
 
    -- load and functionalize embedding net
-   local model1 = require(opt.homePath .. opt.model)({
+   local model1 = require(opt.model)({
       nClasses=opt.nClasses, useCUDA=opt.useCUDA, classify=false, nIn=opt.nIn, nDepth=opt.nDepth
    })
    local embedNet1 = model1.net
-   local model2 = require(opt.homePath .. opt.model)({
+   local model2 = require(opt.model)({
       nClasses=opt.nClasses, useCUDA=opt.useCUDA, classify=false, nIn=opt.nIn, nDepth=opt.nDepth
    })
    local embedNet2 = model2.net

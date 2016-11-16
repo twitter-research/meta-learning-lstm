@@ -1,7 +1,9 @@
 #!/usr/bin/env torch
 
+require 'pl'
+
 -- options
-local opt = require 'cortex-core.libs.opt' [[
+local opt = lapp[[
    Train a one-shot network
    
    Experiment config file (overrides options below):
@@ -30,7 +32,7 @@ local opt = require 'cortex-core.libs.opt' [[
 ]]
 
 -- run
-local result = require('cortex-core.projects.research.oneShotLSTM.train.train')(opt)
+local result = require('train.train')(opt)
 print('Task: ' .. opt.task .. '; Data: ' .. opt.data .. '; Model: ' .. opt.learner)
 print('Test Accuracy: ')
 print(result)

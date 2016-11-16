@@ -17,5 +17,5 @@ return function(opt, dataset)
       return trainEmbedding, testEmbedding
    end 
 
-   return require(opt.homePath .. 'model.baselines.pre-train')(opt, dataset)
+   return require('model.baselines.pre-train')(opt, dataset)
 end

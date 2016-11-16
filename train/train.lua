@@ -1,15 +1,15 @@
 local nn = require 'nn'
 local optim = require 'optim'
-local util = require 'cortex-core.projects.research.oneShotLSTM.util.util'
+local util = require 'util.util'
 _ = require 'moses'
 
 return function(opt) 
    -- load config info for task, data, and model 
-   opt = require('cortex-core.projects.research.oneShotLSTM.' .. opt.task)(opt)
-   opt = require('cortex-core.projects.research.oneShotLSTM.' .. opt.data)(opt)
-   opt = require('cortex-core.projects.research.oneShotLSTM.' .. opt.model)(opt)
+   opt = require(opt.task)(opt)
+   opt = require(opt.data)(opt)
+   opt = require(opt.model)(opt)
    if opt.test ~= '-' then
-      opt = require('cortex-core.projects.research.oneShotLSTM.' .. opt.test)(opt)
+      opt = require(opt.test)(opt)
    end
 
    -- options 
@@ -25,11 +25,11 @@ return function(opt)
    print('Using data-loader: ' .. opt.dataLoader)
    local train, validation, test
    if opt.dataLoader == 'dataset.data-loader' then 
-      train = require(opt.homePath .. opt.dataLoader)(opt, opt.trainFile)  
-      validation = require(opt.homePath .. opt.dataLoader)(opt, opt.validationFile, opt.validationEpisodesFile)
-      test = require(opt.homePath .. opt.dataLoader)(opt, opt.testFile, opt.testEpisodesFile)
+      train = require(opt.dataLoader)(opt, opt.trainFile)  
+      validation = require(opt.dataLoader)(opt, opt.validationFile, opt.validationEpisodesFile)
+      test = require(opt.dataLoader)(opt, opt.testFile, opt.testEpisodesFile)
    elseif opt.dataLoader == 'dataset.data-loader2' then
-      train, validation, test = require(opt.homePath .. opt.dataLoader)(opt)
+      train, validation, test = require(opt.dataLoader)(opt)
    end
    local data = {train=train, validation=validation, test=test}   
    
@@ -41,7 +41,7 @@ return function(opt)
    end
       
    -- run
-   local acc = require(opt.homePath .. opt.learner)(opt, data)
+   local acc = require(opt.learner)(opt, data)
    return acc
 
 end

@@ -1,5 +1,5 @@
-local util = require 'cortex-core.projects.research.oneShotLSTM.util.util'
-local nearestNeighborLib = require 'cortex-core.projects.research.oneShotLSTM.model.baselines.nearest-neighbor'
+local util = require 'util.util'
+local nearestNeighborLib = require 'model.baselines.nearest-neighbor'
 local autograd = require 'autograd'
 
 return function(opt, dataset) 
@@ -9,7 +9,7 @@ return function(opt, dataset)
    local metaTestSet = dataset.test 
    
    -- model
-   local model = require(opt.homePath .. opt.model) ({
+   local model = require(opt.model) ({
       nClasses = opt.nAllClasses, 
       useCUDA = opt.useCUDA,
       classify = true,
@@ -191,7 +191,8 @@ return function(opt, dataset)
 
       return ret
    elseif opt.preTrainSGD then
-      
+      network:training()
+ 
       -- find best hyper-parameters on validation set 
       local bestPerf = opt.bestSGD(model, opt.nClasses.val, metaValidationSet, opt.nValidationEpisode, valConf, opt, opt.learningRates, opt.learningRateDecays, opt.nUpdates)    
       print('Best params: ')

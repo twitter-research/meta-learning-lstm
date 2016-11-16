@@ -1,13 +1,13 @@
-require 'cortex-core.projects.research.oneShotLSTM.model.lstm.lstm-helper'
+require 'model.lstm.lstm-helper'
 
 local t = require 'torch'
 local autograd = require 'autograd'
-local util = require 'cortex-core.projects.research.oneShotLSTM.util.util'
-local nearestNeighborLib = require 'cortex-core.projects.research.oneShotLSTM.model.baselines.nearest-neighbor'
+local DirectNode = require 'autograd.runtime.direct.DirectNode'
+local util = require 'util.util'
 
 function getLearner(opt)
    local learner = {}
-   local model = require(opt.homePath .. opt.model)({
+   local model = require(opt.model)({
       nClasses=opt.nClasses.train,
       classify=true,
       useCUDA=opt.useCUDA,
@@ -15,7 +15,7 @@ function getLearner(opt)
       nDepth=opt.nDepth
    }) 
    
-   local netF, learnerParams = autograd.functionalize(model.net:clone())      
+   local netF, learnerParams = autograd.functionalize(model.net:clone('running_mean', 'running_std'))      
    learner.params = learnerParams
    local parameters, gradParameters = model.net:getParameters()
    
@@ -35,31 +35,8 @@ function getLearner(opt)
       local out = learner.forward(params, input)
     
       return loss(out, testY), out 
-   end 
-
-   local embedFunction = function(lopt)
-      local network = lopt.network
-      local trainData = lopt.trainData
-      local testData = lopt.testData
-
-      -- embeddings are output of pre-trained network
-      network:evaluate()
-      network:forward(trainData)
-      local trainEmbedding = network.modules[#network.modules - 1].output:clone()   
-      network:forward(testData)
-      local testEmbedding = network.modules[#network.modules - 1].output:clone()
-      network:training()
+   end  
    
-      return trainEmbedding, testEmbedding
-   end 
-
-   learner.nearestNeighbor = function(params, trainInput, trainTarget, testTarget)
-      parameters:copy(params)
-      return nearestNeighborLib.classify(model.net, trainInput, trainTarget, testTarget, {embedFunction=embedFunction, useCUDA=opt.useCUDA}) 
-   end
-
-   --local softmax = nn.SoftMax():float()
-
    local feval = function(x, inputs, targets)
       if x ~= parameters then
          parameters:copy(x)
@@ -91,7 +68,21 @@ function getLearner(opt)
  
    learner.reset = function()
       netF.module:reset()
+      model.net:reset()
    end
+   
+   learner.set = function(mode)
+      if mode == 'training' then
+         netF.module:training()
+         model.net:training()
+      elseif mode == 'evaluate' then
+         netF.module:evaluate()
+         model.net:evaluate()
+      else
+         error(string.format("model.set: undefined mode - %s", mode))
+      end
+   end 
+
 
    return learner
 end
@@ -101,7 +92,7 @@ function getMetaLearner2(opt)
    local nHidden = opt.nHidden or 20
    local maxGradNorm = opt.maxGradNorm or 0.25 
 
-   local nLstm, params, layers = require(opt.homePath .. '.model.lstm.RecurrentLSTMNetwork')({  
+   local nLstm, params, layers = require('model.lstm.RecurrentLSTMNetwork')({  
       inputFeatures = 4,   -- loss(2) + preGrad(2) = 4
       hiddenFeatures = nHidden,
       outputType = 'all',
@@ -149,64 +140,11 @@ function getMetaLearner2(opt)
       local c, newState2 = mlLstm(metaLearnerParams[2], {h, grad}, prevState[2], layers[2])
 
       return c, {newState1, newState2}
-   end
-   
-   metaLearner.nearestNeighbor = function(metaLearnerParams, learner, trainInput, trainTarget, testInput, testTarget, steps, batchSize)
+   end 
+
+   metaLearner.f = function(metaLearnerParams, learner, trainInput, trainTarget, testInput, testTarget, steps, batchSize, evaluate)
       -- set learner's initial parameters = inital cell state 
-      local learnerParams = torch.clone(metaLearnerParams[2].cI)  
-   
-      local metaLearnerState = {}
-      local metaLearnerCell = {}
-
-      local trainSize = trainInput:size(1)      
-      local idx = 1
-
-      -- training set loop
-      for s=1,steps do
-
-         -- shuffle?
-         if toShuffle then 
-            local shuffle = torch.randperm(trainInput:size(1))
-            trainInput = trainInput:index(1, shuffle:long())
-            trainTarget = trainTarget:index(1, shuffle:long())
-         end
-         
-         for i=1,trainSize,batchSize do 
-            -- get image input & label
-            local x = trainInput[{{i,i+batchSize-1},{},{},{}}]
-            local y = trainTarget[{{i,i+batchSize-1}}]
-
-            -- get gradient and loss w/r/t input+label      
-            local gradLearner, lossLearner = learner.df(learnerParams, x, y)                    
- 
-            -- preprocess grad & loss 
-            gradLearner = torch.view(gradLearner, gradLearner:size(1), 1, 1)
-            local preGrad, preLoss = preprocess(gradLearner, lossLearner)
-
-            -- use meta-learner to get learner's next parameters
-            local state = metaLearnerState[idx-1] or {{},{}} 
-            local cOut, sOut = metaLearner.forward(metaLearnerParams, layers, {preLoss, preGrad, gradLearner}, state)   
-            metaLearnerState[idx] = sOut 
-            metaLearnerCell[idx] = cOut
-            
-            -- break computational graph with getValue call 
-            learnerParams = cOut
-            idx = idx + 1
-         end
-      end      
-   
-      -- Unflatten params and get loss+predictions from learner
-      local learnerParamsFinal = metaLearnerCell[#metaLearnerCell] 
-      
-      -- nearest neighbor
-      local pred = learner.nearestNeighbor(learnerParamsFinal, trainInput, trainTarget, testInput)
-      return nil, pred
-   end
-
-
-   metaLearner.f = function(metaLearnerParams, learner, trainInput, trainTarget, testInput, testTarget, steps, batchSize)
-      -- set learner's initial parameters = inital cell state 
-      local learnerParams = torch.clone(getValue(metaLearnerParams[2].cI)) 
+      local learnerParams = torch.clone(DirectNode.getValue(metaLearnerParams[2].cI)) 
    
       local metaLearnerState = {}
       local metaLearnerCell = {}
@@ -215,6 +153,7 @@ function getMetaLearner2(opt)
       local idx = 1
 
       learner.reset()
+      learner.set('training')
 
       -- training set loop
       for s=1,steps do
@@ -246,13 +185,14 @@ function getMetaLearner2(opt)
             metaLearnerCell[idx] = cOut
             
             -- break computational graph with getValue call 
-            learnerParams = getValue(cOut)
+            learnerParams = DirectNode.getValue(cOut)
             idx = idx + 1
          end
       end      
    
       -- Unflatten params and get loss+predictions from learner
       local learnerParamsFinal = learner.unflattenParams(metaLearnerCell[#metaLearnerCell]) 
+      --if evaluate then learner.set('evaluate') end 
       return learner.f(learnerParamsFinal, testInput, testTarget)
    end
    
