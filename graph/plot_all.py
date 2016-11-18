@@ -1,9 +1,6 @@
 import matplotlib.pyplot as plt
 import sys
 
-FILE1 = 'stdout_simpleConv_2layerLstm_noBN'
-FILE2 = 'stdout_BN'
-
 def readFile(fileName):
    iters = []
    train_vals = []
@@ -22,7 +19,7 @@ def readFile(fileName):
             iteration = int(arr[1][:-1])
             iterFound = True     
 
-         if iterFound and trainFound and oneFound and len(arr) >=4 and arr[1] == 'global' and arr[2] == 'accuracy:':
+         if iterFound and trainFound and oneFound and len(arr) >=4 and arr[1] == 'global' and (arr[2] == 'correct:' or arr[2] == 'accuracy:'):
             val = arr[3]
             if val.find("%") > 0:
                val = val.replace('%', '')
@@ -34,7 +31,7 @@ def readFile(fileName):
             trainFound = False
             oneFound = False
 
-         elif iterFound and trainFound and len(arr) >=4 and arr[1] == 'global' and arr[2] == 'accuracy:':
+         elif iterFound and trainFound and len(arr) >=4 and arr[1] == 'global' and (arr[2] == 'correct:' or arr[2] == 'accuracy:'):
             val = arr[3]
             if val.find("%") > 0:
                val = val.replace('%', '')
@@ -42,7 +39,7 @@ def readFile(fileName):
             oneShot_vals.append(float(val))  
             oneFound = True
 
-         elif iterFound and len(arr) >=4 and arr[1] == 'global' and arr[2] == 'accuracy:':
+         elif iterFound and len(arr) >=4 and arr[1] == 'global' and (arr[2] == 'correct:' or arr[2] == 'accuracy:'):
             val = arr[3]
             if val.find("%") > 0:
                val = val.replace('%', '')
