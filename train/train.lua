@@ -3,7 +3,7 @@ local optim = require 'optim'
 local util = require 'util.util'
 _ = require 'moses'
 
-return function(opt) 
+return function(opt)  
    -- load config info for task, data, and model 
    opt = require(opt.task)(opt)
    opt = require(opt.data)(opt)

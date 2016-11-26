@@ -7,6 +7,7 @@ return function(opt)
    opt.model = 'model.imagenet-net'
    opt.learner = 'model.lstm.train-lstm'
    opt.classify = 'network'
+   opt.BN_momentum = 0.9
 
    --[[opt.optimMethod = 'sgd'   
    opt.learningRate = 0.2  
@@ -22,16 +23,16 @@ return function(opt)
    opt.batchSize[5]=5 
 
    opt.nEpochs = {}
-   opt.nEpochs[1]=10
+   opt.nEpochs[1]=12
    opt.nEpochs[5]=5
 
    opt.BN1 = false 
    opt.BN2 = false
-   opt.nEpisode = 70000 
+   opt.nEpisode = 75000 
    opt.nValidationEpisode = 100
    opt.printPer = 1000
 
-   opt.useCUDA = false 
+   opt.useCUDA = true 
    opt.useWHETLAB = false 
    opt.debug = false
 

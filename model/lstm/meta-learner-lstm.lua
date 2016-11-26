@@ -12,10 +12,11 @@ function getLearner(opt)
       classify=true,
       useCUDA=opt.useCUDA,
       nIn=opt.nIn,
-      nDepth=opt.nDepth
+      nDepth=opt.nDepth,
+      BN_momentum=opt.BN_momentum
    }) 
    
-   local netF, learnerParams = autograd.functionalize(model.net:clone('running_mean', 'running_std'))      
+   local netF, learnerParams = autograd.functionalize(model.net:clone('running_mean', 'running_var'))      
    learner.params = learnerParams
    local parameters, gradParameters = model.net:getParameters()
    
@@ -192,7 +193,7 @@ function getMetaLearner2(opt)
    
       -- Unflatten params and get loss+predictions from learner
       local learnerParamsFinal = learner.unflattenParams(metaLearnerCell[#metaLearnerCell]) 
-      --if evaluate then learner.set('evaluate') end 
+      if evaluate then learner.set('evaluate') end 
       return learner.f(learnerParamsFinal, testInput, testTarget)
    end
    

@@ -159,7 +159,7 @@ return function(opt, dataset)
             --print('processing: ' .. d)
             local trainInput, trainTarget = util.extractK(trainData.input, trainData.target, k, opt.nClasses.test)
            
-            local loss, prediction = classify(metaLearner.params, learner, trainInput, trainTarget, testData.input, testData.target, opt.nEpochs[k] or opt.nEpochs[opt.nTrainShot], opt.batchSize[k] or opt.batchSize[opt.nTrainShot])  
+            local loss, prediction = classify(metaLearner.params, learner, trainInput, trainTarget, testData.input, testData.target, opt.nEpochs[k] or opt.nEpochs[opt.nTrainShot], opt.batchSize[k] or opt.batchSize[opt.nTrainShot], true)  
             
             for i=1,prediction:size(1) do
                testConf[k]:add(prediction[i], testData.target[i]) 

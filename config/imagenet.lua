@@ -4,9 +4,10 @@ return function(opt)
    opt.nDepth = 3
    opt.nIn = 84   
 
-   opt.dataName = 'miniImagenet-local'
-   opt.homePath = 'cortex-core.projects.research.oneShotLSTM.'
+   opt.dataName = 'dataset.miniImagenet'
    opt.dataLoader = 'dataset.data-loader2'   
+
+   opt.rawDataDir = 'raw-data/'
 
    return opt
 end

@@ -1,9 +1,12 @@
 local util = require 'util.util'
 local _ = require 'moses'
 
-function eval(network, criterion, evalSet, nEpisodes, conf, initParams, opt, optimOpt)
-   local params, gParams = network:getParameters() 
- 
+function eval(savedNetwork, criterion, evalSet, nEpisodes, conf, opt, optimOpt) 
+   local acc = {}
+   _.each(conf, function(k, cM)  
+      acc[k] = torch.zeros(nEpisodes)
+   end)
+   
    -- evaluate validation set
    for v=1,nEpisodes do
       local trainSet, testSet = evalSet.createEpisode({})
@@ -16,8 +19,11 @@ function eval(network, criterion, evalSet, nEpisodes, conf, initParams, opt, opt
       _.each(conf, function(k, cM)
          local optimOptCopy = util.deepClone(optimOpt)
    
-         -- initialize weights
-         params:copy(initParams)
+         -- load initial network to use 
+         local network = savedNetwork:clone()
+         network:training()
+
+         local params, gParams = network:getParameters() 
 
          -- train 
          local input, target = util.extractK(trainData.input, trainData.target, k, opt.nClasses.test)
@@ -46,58 +52,53 @@ function eval(network, criterion, evalSet, nEpisodes, conf, initParams, opt, opt
          end
 
          -- test  
+         network:evaluate()
          local prediction = network:forward(testData.input)
          for i=1,prediction:size(1) do
             cM:add(prediction[i], testData.target[i])
          end
+         cM:updateValids()
+         acc[k][v] = cM.totalValid * 100
+         cM:zero() 
       end)  
    end
    
-   local perf = {}
-   return _.map(conf, function(k,cM)
-            cM:updateValids()
-            return cM.totalValid*100
-          end)       
+   return acc 
 end
 
 function bestSGD(model, nClasses, evalSet, nEpisodes, conf, opt, learningRates, learningRateDecays, nUpdates)
+   -- replace last linear layer with new layer
    model.net:remove(model.net:size())
    model.net:add(nn.Linear(model.outSize, nClasses))
    model.net = util.localize(model.net, opt)
-  
-   local network = model.net
-   local tempParams, gParams = network:getParameters()
-   local preTrainedParams = tempParams:clone()
-
+ 
+   local savedNetwork = model.net:clone() 
    local bestPerf = {}
-   _.map(conf, function(k,cM) bestPerf[k] = {params=0, accuracy=0} end)
+   _.map(conf, function(k,cM) bestPerf[k] = {params=0, accuracy=0, accVector} end)
 
-   -- loop over variables to grid search over
+   -- loop over hyperparameters to grid search over
    _.each(learningRates, function(i, lr)
       _.each(learningRateDecays, function(j, lrDecay) 
-         _.each(nUpdates, function(k, update)    
+         _.each(nUpdates, function(m, update)    
             
             -- update best performance on each task
             local optimOpt = {learningRate=lr, learningRateDecay=lrDecay, nUpdate=update}
             print("evaluating params: ")
             print(optimOpt)
-            local kShotAccs = eval(network, model.criterion, evalSet, nEpisodes, conf, preTrainedParams, opt, optimOpt)
             
-            _.each(conf, function(k, cM)  
+            local kShotAccs = eval(savedNetwork, model.criterion, evalSet, nEpisodes, conf, opt, optimOpt)
+            _.each(kShotAccs, function(k, acc)  
                print(k .. '-shot: ')
-               print(cM)
-               if kShotAccs[k] > bestPerf[k].accuracy then
+               print(acc:mean())
+               if acc:mean() > bestPerf[k].accuracy then
                   bestPerf[k].params = optimOpt
-                  bestPerf[k].accuracy = kShotAccs[k]
+                  bestPerf[k].accuracy = acc:mean()
+                  bestPerf[k].accVector = acc 
                end
             end)
          end)
       end)
-   end)
-
-   -- reset params back
-   local params, gParams = network:getParameters()
-   params:copy(preTrainedParams)
+   end) 
 
    return bestPerf
 end

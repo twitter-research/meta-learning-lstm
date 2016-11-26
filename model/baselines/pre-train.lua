@@ -41,6 +41,7 @@ return function(opt, dataset)
       if opt.paramsFile then
          print('loading from: ' .. opt.paramsFile)
          local loadedModel = torch.load(opt.paramsFile)
+         print(loadedModel)
          network = loadedModel
          model.net = network
          --params:copy(loadedParams) 
@@ -177,11 +178,7 @@ return function(opt, dataset)
             --print(testConf[k])
             print(acc[k]:mean())
          end
- 
-         --[[ret[n] = _.values(_.map(testConf, function(i,cM) 
-                         return i .. '-shot: ' .. cM.totalValid*100
-                                      end))
-         _.map(testConf, function(i,cM) cM:zero() end)--]]
+  
          ret[n] = _.values(_.map(acc, function(i, val)
             local low = val:mean() - 1.96*(val:std()/math.sqrt(val:size(1)))
             local high = val:mean() + 1.96*(val:std()/math.sqrt(val:size(1)))
@@ -190,9 +187,7 @@ return function(opt, dataset)
       end)
 
       return ret
-   elseif opt.preTrainSGD then
-      network:training()
- 
+   elseif opt.preTrainSGD then 
       -- find best hyper-parameters on validation set 
       local bestPerf = opt.bestSGD(model, opt.nClasses.val, metaValidationSet, opt.nValidationEpisode, valConf, opt, opt.learningRates, opt.learningRateDecays, opt.nUpdates)    
       print('Best params: ')
@@ -201,10 +196,15 @@ return function(opt, dataset)
       local nUpdate = bestPerf[opt.nTrainShot].params.nUpdate
 
       -- evaluate best hyper-parameters on test set
-      local perf = opt.bestSGD(model, opt.nClasses.test, metaTestSet, opt.nTest[#opt.nTest], testConf, opt, {lr}, {lrDecay}, opt.nUpdates)
-      print(perf)
-      return _.values(_.map(perf, function(k, p)
-               return k .. '-shot: ' .. p.accuracy 
-            end)) 
+      local perfArr = opt.bestSGD(model, opt.nClasses.test, metaTestSet, opt.nTest[#opt.nTest], testConf, opt, {lr}, {lrDecay}, {nUpdate})
+      
+      ret[opt.nTest[#opt.nTest]] = _.values(_.map(perfArr, function(i, perf)
+         local val = perf.accVector
+         local low = val:mean() - 1.96*(val:std()/math.sqrt(val:size(1)))
+         local high = val:mean() + 1.96*(val:std()/math.sqrt(val:size(1)))
+         return i .. '-shot: ' .. val:mean() .. '; ' .. val:std() .. '; [' .. low .. ',' .. high .. ']'
+      end))
+      
+      return ret 
    end   
 end
