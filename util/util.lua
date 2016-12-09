@@ -193,7 +193,12 @@ function util.extractK(input, target, k, nClasses)
       return input, target
    end 
  
-   local inputNew = torch.Tensor(k*nClasses, input:size(2), input:size(3), input:size(4)):typeAs(input)
+   local inputNew 
+   if input:nDimension() == 4 then 
+      inputNew = torch.Tensor(k*nClasses, input:size(2), input:size(3), input:size(4)):typeAs(input)
+   elseif input:nDimension() == 2 then
+      inputNew = torch.Tensor(k*nClasses, input:size(2)):typeAs(input)
+   end
    local targetNew = torch.Tensor(k*nClasses):typeAs(target)
 
    local count = {}
@@ -239,7 +244,11 @@ function util.getRandomSubset(input, target, num)
    input = input:index(1, shuffle:long())
    target = target:index(1, shuffle:long())
 
-   return input[{{1,num},{},{},{}}], target[{{1,num}}]
+   if input:nDimension() == 4 then  
+      return input[{{1,num},{},{},{}}], target[{{1,num}}]
+   elseif input:nDimension() ==2 then
+      return input[{{1,num},{}}], target[{{1,num}}]
+   end
 end
 
 function util.shuffleSplit(trainInput, trainTarget, testInput, testTarget)
@@ -277,5 +286,17 @@ function util.convert(target, map)
    return newTarget, map 
 end
 
+
+function util.getBatch(input, target, idx, batchSize) 
+   local x
+   local y = target[{{idx,idx+batchSize-1}}]
+   if input:nDimension() == 4 then
+      x = input[{{idx,idx+batchSize-1},{},{},{}}]
+   elseif input:nDimension() == 2 then
+      x = input[{{idx,idx+batchSize-1},{}}]
+   end
+
+   return x,y
+end 
 
 return util

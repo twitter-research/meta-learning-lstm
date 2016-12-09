@@ -36,7 +36,8 @@ return function(opt, dataset)
    elseif opt.version == 2 then 
       metaLearnerF = getMetaLearner2
    end
-   local metaLearner = metaLearnerF({learnerParams=learner.params, nParams=learner.nParams, debug=opt.debug, homePath=opt.homePath, BN1=opt.BN1, BN2=opt.BN2})  
+   local metaLearner = metaLearnerF({learnerParams=learner.params, nParams=learner.nParams, debug=opt.debug, 
+      homePath=opt.homePath, nHidden=opt.nHidden, BN1=opt.BN1, BN2=opt.BN2})  
 
    -- type of classification (use network or nearest-neighbor?)
    local classify 

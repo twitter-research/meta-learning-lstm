@@ -168,8 +168,9 @@ function getMetaLearner2(opt)
          
          for i=1,trainSize,batchSize do 
             -- get image input & label
-            local x = trainInput[{{i,i+batchSize-1},{},{},{}}]
-            local y = trainTarget[{{i,i+batchSize-1}}]
+            --local x = trainInput[{{i,i+batchSize-1},{},{},{}}]
+            --local y = trainTarget[{{i,i+batchSize-1}}]
+            local x,y = util.getBatch(trainInput, trainTarget, i, batchSize)
 
             -- get gradient and loss w/r/t input+label      
             local gradLearner, lossLearner = learner.df(learnerParams, x, y)                    
