@@ -3,12 +3,14 @@ return function(opt)
 
    opt.dataLoader = 'dataset.data-loader2'
 
-   opt.model = 'model.conv-net'
+   --opt.model = 'model.conv-net'
+   opt.model = 'model.amazonCat-net'
    opt.learner = 'model.baselines.matching-net'
    opt.embedModel = 'model.baselines.simple-embedding'
    --opt.embedModel = 'model.baselines.FCE-embedding'
 
-   opt.episodeSamplerKind = 'uniform'
+   opt.episodeSamplerKind = 'permutation'
+   --opt.episodeSamplerKind = 'linear'
 
    opt.optimMethod = 'adam'   
    opt.learningRate = 0.0001
@@ -25,7 +27,7 @@ return function(opt)
    --opt.momentum = 0.9
    --opt.weightDecay = 0.0005 
 
-   opt.nEpisode = 75000 --4800  --150000 
+   opt.nEpisode = 50000 --30000 --75000 --4800  --150000 
    opt.nValidationEpisode = 100 
    
    opt.batchSize = opt.nClasses.train * opt.nEval 
@@ -33,7 +35,7 @@ return function(opt)
    opt.episodeBatchSize = 1 
 
    opt.nEpochs = 1 --25 --1
-   opt.printPer = 1000
+   opt.printPer = 1000 
 
    opt.useCUDA = true 
 
