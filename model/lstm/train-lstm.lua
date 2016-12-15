@@ -93,6 +93,9 @@ return function(opt, dataset)
       for i=1,prediction:size(1) do
          trainConf:add(prediction[i], testData.target[i])   
       end
+      --print('test loss: ' .. loss)
+      --print(trainConf)
+      --print('Dataset: ' .. d .. ': status loss: ' .. cost/d)
 
       -- validation status
       if math.fmod(d, printPer) == 0 then

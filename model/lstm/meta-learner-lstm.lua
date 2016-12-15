@@ -37,7 +37,8 @@ function getLearner(opt)
     
       return loss(out, testY), out 
    end  
-   
+  
+   --local softmax = nn.Sequential():add(nn.SoftMax()):float() 
    local feval = function(x, inputs, targets)
       if x ~= parameters then
          parameters:copy(x)
@@ -50,8 +51,8 @@ function getLearner(opt)
       local outputs = model.net:forward(inputs)
       local f = model.criterion:forward(outputs, targets)
 
-      --print(targets)
       --print(softmax:forward(outputs))
+      --print(targets)
 
       -- estimate df/dW
       local df_do = model.criterion:backward(outputs, targets)
@@ -123,6 +124,7 @@ function getMetaLearner2(opt)
       model starts with gradient descent
    --]]
    metaLearner.params[2].bF:uniform(4,5)  --(1,2)  
+   --metaLearner.params[2].bI:uniform(-6,-7)
    metaLearner.params[2].bI:uniform(-4,-5)
 
    -- set initial cell state = learner's initial parameters
