@@ -1,5 +1,13 @@
 local _ = require 'moses'
 
+function normalize(trainDataset, testDataset)
+   local trainSize = trainDataset.X:size(1)
+   local data = torch.cat(trainDataset.X, testDataset.X, 1)
+   data = data - data:mean(1):expandAs(data)
+   --data = torch.cdiv(data, data:std(1):expandAs(data)) 
+   trainDataset.X, testDataset.X = data[{{1,trainSize}}], data[{{trainSize+1,data:size(1)}}]
+end
+
 function check(rawData, opt, k)
    if #rawData.item <= 0 or (opt.nClasses[k] and #rawData.item < opt.nClasses[k]) then
       return false
@@ -89,7 +97,14 @@ return function(opt)
                   --print('refetching episode...')
                   rawdata = data[k].get()
                end
-               return prepareDataset(k, rawData, 'supportExamples', lopt.trainBatchSize), prepareDataset(k, rawData, 'evalExamples', lopt.testBatchSize)
+               local trainDataset, testDataset = prepareDataset(k, rawData, 'supportExamples', lopt.trainBatchSize), 
+                  prepareDataset(k, rawData, 'evalExamples', lopt.testBatchSize)
+               
+               --[[if opt.meanStdNormalize then
+                  normalize(trainDataset, testDataset)
+               end--]] 
+               
+               return trainDataset, testDataset
             end 
       end 
    end)  

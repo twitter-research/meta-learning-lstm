@@ -54,7 +54,6 @@ local function processor(ind, opt, input)
       function getExamples(class)
          return classMap[class]
       end
-
  
       threadInitialized = true
    end
@@ -94,8 +93,8 @@ local function processor(ind, opt, input)
    end
  
    local supportExamples = preprocessImages(supportImages)
-   local evalExamples = preprocessImages(evalImages)
-   	
+   local evalExamples = preprocessImages(evalImages) 
+	
    local metadata = {
       class = class,
       supportExamples = supportExamples,
