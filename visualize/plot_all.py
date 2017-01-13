@@ -66,7 +66,7 @@ if __name__ == '__main__':
       iters, train_vals, oneShot_vals, fiveShot_vals = readFile(sys.argv[i])
       plt.plot(iters, train_vals, label=sys.argv[i] + ":train")
       plt.plot(iters, oneShot_vals, label=sys.argv[i] + ":one-shot")
-      plt.plot(iters, fiveShot_vals, label=sys.argv[i] + ":five-shot")
+      #plt.plot(iters, fiveShot_vals, label=sys.argv[i] + ":five-shot")
          
-   plt.legend(loc='lower right', prop={'size':6})
+   plt.legend(loc='lower right', prop={'size':8})
    plt.show()
