@@ -6,12 +6,14 @@ return function(opt)
    local model = {}
 
    -- load and functionalize embedding net
-   local model1 = require(opt.model)({
-      nClasses=opt.nClasses, useCUDA=opt.useCUDA, classify=false, nIn=opt.nIn, nDepth=opt.nDepth
+   local model1 = require(opt.learner)({
+      nClasses=opt.nClasses, useCUDA=opt.useCUDA, classify=false, nIn=opt.nIn, 
+      nDepth=opt.nDepth, useDropout=opt.useDropout
    })
    local embedNet1 = model1.net
-   local model2 = require(opt.model)({
-      nClasses=opt.nClasses, useCUDA=opt.useCUDA, classify=false, nIn=opt.nIn, nDepth=opt.nDepth
+   local model2 = require(opt.learner)({
+      nClasses=opt.nClasses, useCUDA=opt.useCUDA, classify=false, nIn=opt.nIn, 
+      nDepth=opt.nDepth, useDropout=opt.useDropout
    })
    local embedNet2 = model2.net
 
@@ -20,7 +22,6 @@ return function(opt)
    local modelF, paramsF = autograd.functionalize(embedNet1) 
    local modelG, paramsG = autograd.functionalize(embedNet2) 
    model.params = {f=paramsG, g=paramsG}
-   --model.params = paramsF
 
    -- set training or evaluate mode
    model.set = function(mode)

@@ -26,7 +26,8 @@ function eval(savedNetwork, criterion, evalSet, nEpisodes, conf, opt, optimOpt)
          local params, gParams = network:getParameters() 
 
          -- train 
-         local input, target = util.extractK(trainData.input, trainData.target, k, opt.nClasses.test)
+         local input, target = util.extractK(trainData.input, 
+            trainData.target, k, opt.nClasses.test)
          for i=1,optimOpt.nUpdate do
             -- evaluation network on current batch
             local function feval(x)
@@ -66,7 +67,9 @@ function eval(savedNetwork, criterion, evalSet, nEpisodes, conf, opt, optimOpt)
    return acc 
 end
 
-function bestSGD(model, nClasses, evalSet, nEpisodes, conf, opt, learningRates, learningRateDecays, nUpdates)
+function bestSGD(model, nClasses, evalSet, nEpisodes, conf, opt, learningRates, 
+   learningRateDecays, nUpdates)
+   
    -- replace last linear layer with new layer
    model.net:remove(model.net:size())
    model.net:add(nn.Linear(model.outSize, nClasses))
@@ -82,11 +85,13 @@ function bestSGD(model, nClasses, evalSet, nEpisodes, conf, opt, learningRates, 
          _.each(nUpdates, function(m, update)    
             
             -- update best performance on each task
-            local optimOpt = {learningRate=lr, learningRateDecay=lrDecay, nUpdate=update}
+            local optimOpt = {learningRate=lr, learningRateDecay=lrDecay, 
+               nUpdate=update}
             print("evaluating params: ")
             print(optimOpt)
             
-            local kShotAccs = eval(savedNetwork, model.criterion, evalSet, nEpisodes, conf, opt, optimOpt)
+            local kShotAccs = eval(savedNetwork, model.criterion, evalSet, 
+               nEpisodes, conf, opt, optimOpt)
             _.each(kShotAccs, function(k, acc)  
                print(k .. '-shot: ')
                print(acc:mean())
@@ -104,6 +109,8 @@ function bestSGD(model, nClasses, evalSet, nEpisodes, conf, opt, learningRates, 
 end
 
 return function(opt, dataset)
+   opt.preTrainSGD = true
    opt.bestSGD = bestSGD 
+   
    return require('model.baselines.pre-train')(opt, dataset) 
 end

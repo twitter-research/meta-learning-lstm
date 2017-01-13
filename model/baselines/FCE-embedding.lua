@@ -7,33 +7,38 @@ return function(opt)
    local maxGradNorm = opt.maxGradNorm or 0.25
 
    -- load and functionalize embedding nets
-   local model1 = require(opt.model)({
-      nClasses=opt.nClasses.train, useCUDA=opt.useCUDA, classify=false, nIn=opt.nIn, nDepth=opt.nDepth
+   local model1 = require(opt.learner)({
+      nClasses=opt.nClasses.train, useCUDA=opt.useCUDA, classify=false, 
+      nIn=opt.nIn, nDepth=opt.nDepth, useDropout=opt.useDropout
    })  
    local embedNet1 = model1.net
-   local model2 = require(opt.model)({
-      nClasses=opt.nClasses.train, useCUDA=opt.useCUDA, classify=false, nIn=opt.nIn, nDepth=opt.nDepth
+   local model2 = require(opt.learner)({
+      nClasses=opt.nClasses.train, useCUDA=opt.useCUDA, classify=false, 
+      nIn=opt.nIn, nDepth=opt.nDepth, useDropout=opt.useDropout
    })  
    local embedNet2 = model2.net
    local modelF, paramsF = autograd.functionalize(embedNet1)
    local modelG, paramsG = autograd.functionalize(embedNet2)   
          
-   local attLSTM, paramsAttLSTM, layers = require('model.lstm.RecurrentLSTMNetwork')({
-      inputFeatures = model1.outSize + model2.outSize,
-      hiddenFeatures = model1.outSize,
-      outputType = 'all'
+   local attLSTM, paramsAttLSTM, layers = 
+      require('model.lstm.RecurrentLSTMNetwork')({
+         inputFeatures = model1.outSize + model2.outSize,
+         hiddenFeatures = model1.outSize,
+         outputType = 'all'
    })
 
-   local biLSTMForward, paramsBiLSTMForward, layers = require('model.lstm.RecurrentLSTMNetwork')({
-      inputFeatures = model2.outSize, 
-      hiddenFeatures = model2.outSize,
-      outputType = 'all'
+   local biLSTMForward, paramsBiLSTMForward, layers = 
+      require('model.lstm.RecurrentLSTMNetwork')({
+         inputFeatures = model2.outSize, 
+         hiddenFeatures = model2.outSize,
+         outputType = 'all'
    }) 
 
-   local biLSTMBackward, paramsBiLSTMBackward, layers = require('model.lstm.RecurrentLSTMNetwork')({
-      inputFeatures = model2.outSize, 
-      hiddenFeatures = model2.outSize,
-      outputType = 'all'
+   local biLSTMBackward, paramsBiLSTMBackward, layers = 
+      require('model.lstm.RecurrentLSTMNetwork')({
+         inputFeatures = model2.outSize, 
+         hiddenFeatures = model2.outSize,
+         outputType = 'all'
    })
 
    local softmax = autograd.functionalize(nn.SoftMax(true)) 
@@ -70,14 +75,16 @@ return function(opt)
       r[1] = t.expandAs(t.mean(gS,1), fX)
       for i=1,K do   
          local x = t.cat(fX, r[i], 2) 
-         local tempH, state = attLSTM(params, t.view(x, t.size(x,1), 1, t.size(x,2)), {h=h[i-1], c=c[i-1]})
+         local tempH, state = attLSTM(params, t.view(x, t.size(x,1), 1, 
+            t.size(x,2)), {h=h[i-1], c=c[i-1]})
          h[i] = fX + t.view(tempH, t.size(tempH, 1), t.size(tempH, 3))
          c[i] = state.c
    
          local batchR = {}
          for j=1,t.size(h[i], 1) do
             local hInd = h[i][j] 
-            local weight = t.sum(t.cmul(gS, t.expandAs(t.reshape(hInd, 1, hInd:size(1)), gS)), 2)
+            local weight = t.sum(t.cmul(gS, t.expandAs(
+               t.reshape(hInd, 1, hInd:size(1)), gS)), 2)
             local embed = t.sum(t.cmul(t.expandAs(softmax(weight), gS), gS), 1)
             batchR[j] = embed 
          end
@@ -101,11 +108,13 @@ return function(opt)
       local size = t.size(gX,1)
       
       for i=1,size do
-         local tempHF, tempStateF = biLSTMForward(params[1], t.index(gX, 1, t.LongTensor{i}), stateF[i-1])
+         local tempHF, tempStateF = biLSTMForward(params[1], 
+            t.index(gX, 1, t.LongTensor{i}), stateF[i-1])
          fH[i] = tempHF
          stateF[i] = tempStateF
          
-         local tempHB, tempStateB = biLSTMBackward(params[2], t.index(gX, 1, t.LongTensor{size-(i-1)}), stateB[i-1]) 
+         local tempHB, tempStateB = biLSTMBackward(params[2], 
+            t.index(gX, 1, t.LongTensor{size-(i-1)}), stateB[i-1]) 
          bH[i] = tempHB
          stateB[i] = tempStateB
       end

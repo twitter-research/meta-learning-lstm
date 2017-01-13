@@ -2,9 +2,6 @@ local _ = require 'moses'
 local c = require 'trepl.colorize'
 local Dataset = require 'dataset.Dataset'
 
-local util = require 'dataset.util'
---local remoteDataDir = '/user/cortex/metalearn-sachinr/imagenet-local'
-
 local function loadSplit(splitFile)
    --[[
    Args:
@@ -38,18 +35,7 @@ local function processor(ind, opt, input)
 		local sys = require 'sys' 
       local image = require 'image'
 
-      local pre = nn.Sequential()
-      --[[[if opt.pre then
-         assert(not opt.resizeType, 'resizeType is only used if there is no pre')
-         pre:add(opt.pre(opt))
-      else
-         pre:add(prenn.Image(opt.imageDepth,
-                             opt.imageHeight,
-                             opt.imageWidth,
-                             opt.resizeType))
-      end
-      --]]
-
+      local pre = nn.Sequential() 
       pre:add(nn.Reshape(1, opt.imageDepth, opt.imageHeight, opt.imageWidth))
       pre:add(nn.MulConstant(1.0 / 255, true))
 
@@ -61,7 +47,6 @@ local function processor(ind, opt, input)
 
       if opt.cuda then
          require 'cunn'
-         --require 'cudnn'
          pre:insert(nn.Copy('torch.ByteTensor', 'torch.CudaTensor'), 1)
          pre:cuda()
       else
@@ -88,14 +73,10 @@ local function processor(ind, opt, input)
    -- construct all image urls
 	local urls = _.map(opt.imageFiles[class], function(i, v)
       return opt.dataDir .. '/' .. v
-   end)
-	--[[local urls = _.map(opt.imageFiles[class], function(i, v)
-      return opt.imageHost .. '/' .. v
-   end)--]]
+   end)	
 
-   -- shuffle them
+   -- shuffle them and separate into train & test
    urls = _.shuffle(urls)
-
    local supportUrls = _.first(urls, opt.nSupportExamples)
    local evalUrls = _.rest(urls, opt.nSupportExamples + 1)	
 
@@ -140,47 +121,22 @@ local function getData(opt)
    end)
    local requiredFiles = _.append({imageZipFile}, _.values(splitFiles))
 	
-	local ret = { }
-
    if not paths.dirp(splitDir) then
       paths.mkdir(splitDir)
    end
-
-   -- check which files we are missing
-   local filesToFetch = _.select(requiredFiles, function(i, baseFile)
-      return not paths.filep(paths.concat(splitDir, baseFile))
-   end)
-
-   --[[-- fetch if necessary
-   if #filesToFetch > 0 then
-      print(c.green '==>' .. ' fetching miniImagenet files')
-      _.each(filesToFetch, function(i, baseFile)
-			print(c.green '==>' .. ' fetching ' .. baseFile)
-			local timer = torch.Timer()
-         -- retrieve from HDFS
-         local remotePath = paths.concat(remoteDataDir, baseFile)
-         local localPath = paths.concat(splitDir, baseFile)
-         util.fetchHDFSfile(remotePath, localPath)
-
-			print(c.green '==>' .. ' time to fetch: ' .. timer:time().real .. ' s')
-      end)
-		print(c.green '==>' .. 'finished fetching files')
-   else
-      print(c.green '==>' .. ' found miniImagenet files')
-   end
-   --]]
-
-	-- unzip images
+ 
+	-- unzip images if necessary
 	if not paths.dirp(paths.concat(splitDir, imagesDir)) then 
 		print('unzipping: ' .. paths.concat(splitDir, imageZipFile))
-		os.execute(string.format('unzip %s -d %s', paths.concat(splitDir, imageZipFile), splitDir))
+		os.execute(string.format('unzip %s -d %s', paths.concat(splitDir, 
+         imageZipFile), splitDir))
 	end
 	
 	print('data dir: ' .. paths.concat(splitDir, imagesDir))
 	local miniImagenetDataDir = paths.concat(splitDir, imagesDir)
-   --local imageHost = loadImageHost(paths.concat(splitDir, 'meta.csv'))
 
    -- prepare datasets
+   local ret = { }
    _.each(splits, function(i, split)
       -- class => image filename mapping
       local imageFiles = loadSplit(paths.concat(splitDir, splitFiles[split]))
@@ -216,11 +172,7 @@ local function getData(opt)
          size = size
       }
    end)
-
-   ret.buildDatasets = function(sample)
-      return util.buildDatasets(sample, opt.batchSize, opt.exampleSamplerKind, opt.cuda)
-   end
-
+ 
    return ret
 end
 

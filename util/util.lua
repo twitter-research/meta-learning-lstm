@@ -146,6 +146,11 @@ function util.unflattenParamsArb(exampleParams, flatParams)
    return unflattenParams
 end
 
+--[[
+   If networkParams and loadParams are not the same size because loadParams 
+   is smaller, extend loadParams to matchg networkParams size by intializing
+   extra numbers randomly.
+--]]
 function util.checkAndExpandParams(networkParams, loadParams)
    if type(networkParams) == 'userdata' and type(loadParams) == 'userdata' then
       

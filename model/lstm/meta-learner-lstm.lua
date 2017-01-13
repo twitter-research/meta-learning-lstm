@@ -7,7 +7,7 @@ local util = require 'util.util'
 
 function getLearner(opt)
    local learner = {}
-   local model = require(opt.model)({
+   local model = require(opt.learner)({
       nClasses=opt.nClasses.train,
       classify=true,
       useCUDA=opt.useCUDA,
@@ -16,7 +16,8 @@ function getLearner(opt)
       BN_momentum=opt.BN_momentum
    }) 
    
-   local netF, learnerParams = autograd.functionalize(model.net:clone('running_mean', 'running_var'))      
+   local netF, learnerParams = autograd.functionalize(
+      model.net:clone('running_mean', 'running_var'))      
    learner.params = learnerParams
    local parameters, gradParameters = model.net:getParameters()
    
@@ -38,7 +39,6 @@ function getLearner(opt)
       return loss(out, testY), out 
    end  
   
-   --local softmax = nn.Sequential():add(nn.SoftMax()):float() 
    local feval = function(x, inputs, targets)
       if x ~= parameters then
          parameters:copy(x)
@@ -49,10 +49,7 @@ function getLearner(opt)
 
       -- evaluate function for complete mini batch
       local outputs = model.net:forward(inputs)
-      local f = model.criterion:forward(outputs, targets)
-
-      --print(softmax:forward(outputs))
-      --print(targets)
+      local f = model.criterion:forward(outputs, targets) 
 
       -- estimate df/dW
       local df_do = model.criterion:backward(outputs, targets)
@@ -89,7 +86,7 @@ function getLearner(opt)
    return learner
 end
 
-function getMetaLearner2(opt)
+function getMetaLearner(opt)
    local metaLearner = {}
    local nHidden = opt.nHidden or 20
    local maxGradNorm = opt.maxGradNorm or 0.25 
@@ -123,8 +120,7 @@ function getMetaLearner2(opt)
       want initial forget value to be high and input value to be low so that
       model starts with gradient descent
    --]]
-   metaLearner.params[2].bF:uniform(4,5)  --(1,2)  
-   --metaLearner.params[2].bI:uniform(-6,-7)
+   metaLearner.params[2].bF:uniform(4,5)   
    metaLearner.params[2].bI:uniform(-4,-5)
 
    -- set initial cell state = learner's initial parameters
@@ -139,15 +135,19 @@ function getMetaLearner2(opt)
 
       local lossExpand = torch.expandAs(loss, preGrad)
       local input1 = torch.cat(lossExpand, preGrad, 3)
-      local h, newState1, _ = nLstm(metaLearnerParams[1], input1, prevState[1], layers[1])
-      local c, newState2 = mlLstm(metaLearnerParams[2], {h, grad}, prevState[2], layers[2])
+      local h, newState1, _ = nLstm(metaLearnerParams[1], input1, prevState[1], 
+                                    layers[1])
+      local c, newState2 = mlLstm(metaLearnerParams[2], {h, grad}, prevState[2], 
+                                    layers[2])
 
       return c, {newState1, newState2}
    end 
 
-   metaLearner.f = function(metaLearnerParams, learner, trainInput, trainTarget, testInput, testTarget, steps, batchSize, evaluate)
+   metaLearner.f = function(metaLearnerParams, learner, trainInput, trainTarget, 
+      testInput, testTarget, steps, batchSize, evaluate)
       -- set learner's initial parameters = inital cell state 
-      local learnerParams = torch.clone(DirectNode.getValue(metaLearnerParams[2].cI)) 
+      local learnerParams = torch.clone(DirectNode.getValue(
+         metaLearnerParams[2].cI)) 
    
       local metaLearnerState = {}
       local metaLearnerCell = {}
@@ -184,7 +184,8 @@ function getMetaLearner2(opt)
 
             -- use meta-learner to get learner's next parameters
             local state = metaLearnerState[idx-1] or {{},{}} 
-            local cOut, sOut = metaLearner.forward(metaLearnerParams, layers, {preLoss, preGrad, gradLearner}, state)   
+            local cOut, sOut = metaLearner.forward(metaLearnerParams, layers, 
+               {preLoss, preGrad, gradLearner}, state)   
             metaLearnerState[idx] = sOut 
             metaLearnerCell[idx] = cOut
             
@@ -195,15 +196,20 @@ function getMetaLearner2(opt)
       end      
    
       -- Unflatten params and get loss+predictions from learner
-      local learnerParamsFinal = learner.unflattenParams(metaLearnerCell[#metaLearnerCell]) 
+      local learnerParamsFinal = learner.unflattenParams(
+         metaLearnerCell[#metaLearnerCell]) 
       if evaluate then learner.set('evaluate') end 
       return learner.f(learnerParamsFinal, testInput, testTarget)
    end
    
    metaLearner.df = autograd(metaLearner.f)  
 
-   metaLearner.dfWithGradNorm = function(metaLearnerParams, learner, trainInput, trainTarget, testInput, testTarget, layers, prevState, steps)  
-      local grads, loss, pred = metaLearner.df(metaLearnerParams, learner, trainInput, trainTarget, testInput, testTarget, layers, prevState, steps)  
+   metaLearner.dfWithGradNorm = function(metaLearnerParams, learner, trainInput, 
+      trainTarget, testInput, testTarget, layers, prevState, steps)  
+      
+      local grads, loss, pred = metaLearner.df(metaLearnerParams, learner, 
+         trainInput, trainTarget, testInput, testTarget, layers, prevState, 
+         steps)  
 
       local norm = 0
       for i,grad in ipairs(autograd.util.sortedFlatten(grads)) do
