@@ -8,7 +8,6 @@ return function(opt)
 
    opt.optimMethod = 'adam'   
    opt.learningRate = 0.0001
-   opt.useDropout = true
    opt.batchSize = opt.nClasses.train * opt.nEval 
    
    opt.nEpisode = 75000 
