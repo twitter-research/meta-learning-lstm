@@ -59,6 +59,8 @@ return function(opt)
       elseif mode == 'evaluate' then
          modelF.module:evaluate()
          modelG.module:evaluate()
+      else                                                                      
+         error(string.format("model.set: undefined mode - %s", mode))           
       end
    end
 

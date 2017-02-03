@@ -98,7 +98,7 @@ return function(opt, dataset)
             trainConf:zero()
 
             if opt.convNearestNeighbor then 
-               
+   
                -- evaluate validation set
                for v=1,opt.nValidationEpisode do
                   

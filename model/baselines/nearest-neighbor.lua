@@ -7,25 +7,18 @@ function nearestNeighborLib.classifySingleTest(trainX, trainY, singleTestX, opt,
    -- calulate cosine weights
    local m = nn.Sequential()
    m:add(nn.CosineDistance())
-   --m:add(nn.SoftMax())
+   
    if opt.useCUDA then 
       m = m:cuda()
    else
       m = m:float()
    end
    local w = m:forward({trainX:clone(), repeatedTestX})
-   --print(w)
-   --print(trainY)
-
+   
    -- return label of most simlar neighbor 
    local _, idxs = torch.sort(-w, 1)
    return trainY[idxs[1]]
-   
-   --[[local lbl = 0
-   for i=1,K do
-      lbl = lbl + trainY[idxs[i]
-   end
-   return torch.round(lbl/K)--]]
+ 
 end
 
 function nearestNeighborLib.classify(network, trainInput, trainLabel, testInput, opt)
@@ -33,7 +26,6 @@ function nearestNeighborLib.classify(network, trainInput, trainLabel, testInput,
    
    local ret = {}
    for i=1,testEmbedding:size(1) do 
-      --print(i)
       ret[i] = nearestNeighborLib.classifySingleTest(trainEmbedding, trainLabel, testEmbedding[i], opt)
    end
 

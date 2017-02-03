@@ -37,7 +37,7 @@ function getMatchingNet(opt)
 
       -- embed support set & test items using g and f respectively  
       local gS = embedModel.embedS(params, trainInput)
-      local fX = embedModel.embedX(params, testInput, gS, 3)
+      local fX = embedModel.embedX(params, testInput, gS, opt.steps)
 
       -- repeat tensors so that can get cosine sims in one call
       local repeatgS = torch.repeatTensor(gS, torch.size(fX, 1), 1)

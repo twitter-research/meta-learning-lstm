@@ -3,8 +3,13 @@ return function(opt)
 
    opt.learner = 'model.matching-net-classifier'
    opt.metaLearner = 'model.baselines.matching-net'
-   opt.embedModel = 'model.baselines.simple-embedding'
-   --opt.embedModel = 'model.baselines.FCE-embedding'
+  
+   -- simple or FCE-embedding model? 
+   --opt.embedModel = 'model.baselines.simple-embedding'
+   opt.embedModel = 'model.baselines.FCE-embedding'
+   
+   opt.steps = 3
+   opt.useDropout = true
 
    opt.optimMethod = 'adam'   
    opt.learningRate = 0.0001

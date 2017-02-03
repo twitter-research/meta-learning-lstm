@@ -17,8 +17,6 @@ return function(opt)
    })
    local embedNet2 = model2.net
 
-   embedNet1:double()
-   embedNet2:double()
    local modelF, paramsF = autograd.functionalize(embedNet1) 
    local modelG, paramsG = autograd.functionalize(embedNet2) 
    model.params = {f=paramsG, g=paramsG}

@@ -3,7 +3,7 @@ return function(opt)
    
    opt.learner = 'model.lstm-classifier'
    opt.metaLearner = 'model.lstm.train-lstm'
-   opt.BN_momentum = 0.9
+   opt.BN_momentum = 0.95
     
    opt.optimMethod = 'adam'
    opt.learningRate = 0.001
