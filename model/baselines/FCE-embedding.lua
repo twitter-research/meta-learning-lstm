@@ -72,8 +72,6 @@ return function(opt)
       local c = {}
       local r = {}
       
-      --r[1] = t.zero(fX.new(t.size(fX,1), t.size(fX,2)))
-      --r[1] = t.clone(fX)
       r[1] = t.expandAs(t.mean(gS,1), fX)
       for i=1,K do   
          local x = t.cat(fX, r[i], 2) 
