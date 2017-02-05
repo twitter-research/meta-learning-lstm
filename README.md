@@ -16,17 +16,17 @@ place in folder called `images` and place folder in `data/miniImagenet/`.
 
 To train a model:
 ```
-th run/train.lua --task [1-shot or 5-shot task] --data config.imagenet --model [model name]
+th train/run-train.lua --task [1-shot or 5-shot task] --data config.imagenet --model [model name]
 ```
 
 For example, to run matching-nets:
 ```
-th run/train.lua --task config.5-shot-5-class --data config.imagenet --model config.baselines.train-matching-net
+th train/run-train.lua --task config.5-shot-5-class --data config.imagenet --model config.baselines.train-matching-net
 ```
 
 And, to run LSTM meta-learner for 5-shot task:
 ```
-th run/train.lua --task config.5-shot-5-class --data config.imagenet --model config.lstm.train-imagenet-5shot
+th train/run-train.lua --task config.5-shot-5-class --data config.imagenet --model config.lstm.train-imagenet-5shot
 ```
 
 ## TODO 
