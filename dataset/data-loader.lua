@@ -62,7 +62,7 @@ return function(opt)
             function(lopt)
                local rawData = data[k].get()
                while not check(rawData, opt, k) do
-                  --print('refetching episode...')
+                  print('refetching episode...')
                   rawdata = data[k].get()
                end
                local trainDataset, testDataset = prepareDataset(k, 

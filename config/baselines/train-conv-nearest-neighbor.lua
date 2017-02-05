@@ -6,10 +6,9 @@ return function(opt)
 
    opt.trainFull = true 
    opt.nClasses.train = 64 
-   opt.nAllClasses = 64   
     
    opt.learningRate = 0.001
-   opt.trainBatchSize = 32 
+   opt.trainBatchSize = 64 
    
    opt.nEpochs = 30000    
    opt.nValidationEpisode = 100

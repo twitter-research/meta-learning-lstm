@@ -10,7 +10,7 @@ return function(opt, dataset)
    
    -- learner
    local model = require(opt.learner) ({
-      nClasses = opt.nAllClasses, 
+      nClasses = opt.nClasses.train, 
       useCUDA = opt.useCUDA,
       classify = true,
       nIn = opt.nIn,
@@ -21,7 +21,7 @@ return function(opt, dataset)
 
    -- keep track of errors
    local avgs = {}  
-   local trainConf = optim.ConfusionMatrix(opt.nAllClasses)
+   local trainConf = optim.ConfusionMatrix(opt.nClasses.train)
    local valConf = {}
    local testConf = {}
    for _,k in pairs(opt.nTestShot) do
@@ -59,7 +59,7 @@ return function(opt, dataset)
          local data = trainSet:get()   
           
          local input, target = util.getRandomSubset(data.input, data.target, 
-            opt.nClasses.train) 
+            opt.trainBatchSize) 
 
          -- evaluation network on current batch
          local function feval(x)
@@ -99,13 +99,11 @@ return function(opt, dataset)
 
             if opt.convNearestNeighbor then 
    
-               -- evaluate validation set
+               -- meta-validation loop 
                for v=1,opt.nValidationEpisode do
-                  
-                  --print('metaValidation Train')
-                  local trainSet, testSet = metaValidationSet.createEpisode({})
-         
+                 
                   -- get all train and test examples
+                  local trainSet, testSet = metaValidationSet.createEpisode({}) 
                   local trainData = trainSet:get()
                   local testData = testSet:get()        
  
@@ -123,6 +121,7 @@ return function(opt, dataset)
                   end
                end
 
+               -- print accuracy on meta-validation set
                for _,k in pairs(opt.nTestShot) do
                   print('Validation Accuracy (' .. k .. '-shot)')
                   print(valConf[k])
@@ -154,10 +153,8 @@ return function(opt, dataset)
          end
  
          for d=1,n do
-            -- create a new episode for each test 
-            local trainSet, testSet = metaTestSet.createEpisode({})   
-
             -- get all train & test 
+            local trainSet, testSet = metaTestSet.createEpisode({})   
             local trainData = trainSet:get() 
             local testData = testSet:get() 
 

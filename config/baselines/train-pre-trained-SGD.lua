@@ -6,10 +6,9 @@ return function(opt)
 
    opt.trainFull = true 
    opt.nClasses.train = 64
-   opt.nAllClasses = 64
    
    opt.learningRate = 0.001
-   opt.trainBatchSize = 32
+   opt.trainBatchSize = 64
   
    opt.learningRates = {0.5, 0.1, 0.01, 0.001, 0.0001, 0.00001}  
    opt.learningRateDecays = {1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 0} 

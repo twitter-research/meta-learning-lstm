@@ -37,7 +37,6 @@ return function(opt, dataset)
    if opt.paramsFile then
       print("loading params from: " .. opt.paramsFile)
       local loadedParams = torch.load(opt.paramsFile)
-      --util.checkAndExpandParams(metaLearner.params[2].cI, loadedParams[2].cI)
       metaLearner.params = loadedParams
    end
 
@@ -69,8 +68,7 @@ return function(opt, dataset)
    -- episode loop 
    for d=1,nEpisode do  
       -- create training epsiode 
-      local trainSet, testSet = metaTrainSet.createEpisode({nTrain=opt.nShot, 
-         nClasses=opt.nClasses})   
+      local trainSet, testSet = metaTrainSet.createEpisode({})   
    
       -- train on meta-train 
       local trainData = trainSet:get() 
@@ -150,8 +148,7 @@ return function(opt, dataset)
       
       -- episodes loop 
       for d=1,n do 
-         local trainSet, testSet = metaTestSet.createEpisode({nTrain=opt.nShot, 
-            nClasses=opt.nClasses})   
+         local trainSet, testSet = metaTestSet.createEpisode({})   
 
          local trainData = trainSet:get() 
          local testData = testSet:get()
