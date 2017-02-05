@@ -15,7 +15,14 @@ function getLearner(opt)
       nDepth=opt.nDepth,
       BN_momentum=opt.BN_momentum
    }) 
-   
+  
+   --[[
+      Note: we are using two networks to simulate learner where one network
+      is used for backward pass on test set and the other is used simply to get 
+      gradients which serve as input to meta-learner. 
+      This is a simple way to make computation graph work 
+      so that it doesn't include gradients of learner
+   --]] 
    local netF, learnerParams = autograd.functionalize(
       model.net:clone('running_mean', 'running_var'))      
    learner.params = learnerParams
@@ -155,28 +162,19 @@ function getMetaLearner(opt)
       local trainSize = trainInput:size(1)      
       local idx = 1
 
+      -- reset parameters for each dataset
       learner.reset()
       learner.set('training')
 
       -- training set loop
-      for s=1,steps do
-
-         -- shuffle?
-         if toShuffle then 
-            local shuffle = torch.randperm(trainInput:size(1))
-            trainInput = trainInput:index(1, shuffle:long())
-            trainTarget = trainTarget:index(1, shuffle:long())
-         end
+      for s=1,steps do 
          
          for i=1,trainSize,batchSize do 
             -- get image input & label
-            --local x = trainInput[{{i,i+batchSize-1},{},{},{}}]
-            --local y = trainTarget[{{i,i+batchSize-1}}]
             local x,y = util.getBatch(trainInput, trainTarget, i, batchSize)
 
-            -- get gradient and loss w/r/t input+label      
+            -- get gradient and loss w/r/t learnerParams for input+label      
             local gradLearner, lossLearner = learner.df(learnerParams, x, y)                    
-            --print(idx .. ": " .. lossLearner)
 
             -- preprocess grad & loss 
             gradLearner = torch.view(gradLearner, gradLearner:size(1), 1, 1)
@@ -198,7 +196,9 @@ function getMetaLearner(opt)
       -- Unflatten params and get loss+predictions from learner
       local learnerParamsFinal = learner.unflattenParams(
          metaLearnerCell[#metaLearnerCell]) 
+      -- use batch-stats when meta-training; otherwise, use running-stats
       if evaluate then learner.set('evaluate') end 
+      
       return learner.f(learnerParamsFinal, testInput, testTarget)
    end
    
