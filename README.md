@@ -4,10 +4,10 @@ https://openreview.net/pdf?id=rJY0-Kcll
 
 ## Dependencies
 The following libaries are necessary:
-# [torch-autograd](https://github.com/twitter/torch-autograd)
-# [torch-ipc](https://github.com/twitter/torch-ipc) (use version from commit 'c1b2984c4c2dae085005d385996f4c0660173b27')
-# [torch-Dataset](https://github.com/twitter/torch-dataset)
-# [moses](https://github.com/Yonaba/Moses)
+* [torch-autograd](https://github.com/twitter/torch-autograd)
+* [torch-ipc](https://github.com/twitter/torch-ipc) (use version from commit 'c1b2984c4c2dae085005d385996f4c0660173b27')
+* [torch-Dataset](https://github.com/twitter/torch-dataset)
+* [moses](https://github.com/Yonaba/Moses)
 
 ## Training
 Splits corresponding to meta-training, meta-validation, and meta-testing are 
