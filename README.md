@@ -28,6 +28,3 @@ And, to run LSTM meta-learner for 5-shot task:
 ```
 th train/run-train.lua --task config.5-shot-5-class --data config.imagenet --model config.lstm.train-imagenet-5shot
 ```
-
-## TODO 
-* Include mini-ImageNet splits
