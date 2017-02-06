@@ -57,12 +57,10 @@ return function(opt)
 
    _.each(data, function(k,v) 
       if type(data[k]) == 'table' and data[k].get then
-         print("k: " .. k .. ": " .. opt.nClasses[k])
          data[k].createEpisode = 
             function(lopt)
                local rawData = data[k].get()
                while not check(rawData, opt, k) do
-                  print('refetching episode...')
                   rawdata = data[k].get()
                end
                local trainDataset, testDataset = prepareDataset(k, 
